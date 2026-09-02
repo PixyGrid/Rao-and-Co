@@ -1,0 +1,44 @@
+# ============================================================
+# Rao & Co HVAC — clean (extensionless) URLs
+# Works at the domain root (raoandco.in) or in a subfolder
+# (e.g. /demo/raoandco/). Requires Apache/LiteSpeed with mod_rewrite.
+# Listing pages (services, industries, projects, blog) are folder
+# index.html files, so no page-vs-folder collision exists.
+# ============================================================
+
+Options +FollowSymLinks -MultiViews -Indexes
+DirectoryIndex index.html
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # 1) /path/index.html  ->  /path/   (keep the clean directory URL)
+  RewriteCond %{THE_REQUEST} \s/+([^\s]*/)?index\.html[\s?] [NC]
+  RewriteRule ^ /%1 [R=301,L,NE]
+
+  # 2) Any other direct .html request  ->  its clean (extensionless) URL
+  RewriteCond %{THE_REQUEST} \s/+([^\s?]+?)\.html[\s?] [NC]
+  RewriteRule ^ /%1 [R=301,L,NE]
+
+  # 3) Serve an extensionless URL from its .html file (detail & single pages).
+  #    Real files and real folders are left alone, so /services/ still loads
+  #    its folder index.html normally.
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{REQUEST_FILENAME}.html -f
+  RewriteRule ^(.+?)/?$ $1.html [L]
+</IfModule>
+
+# Friendly 404
+ErrorDocument 404 /404.html
+
+# Light caching for static assets (optional; ignored if the module is absent)
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType image/webp "access plus 1 year"
+  ExpiresByType image/jpeg "access plus 1 year"
+  ExpiresByType image/png  "access plus 1 year"
+  ExpiresByType image/svg+xml "access plus 1 year"
+  ExpiresByType text/css   "access plus 1 month"
+  ExpiresByType application/javascript "access plus 1 month"
+</IfModule>
